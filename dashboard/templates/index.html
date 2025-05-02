@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to Vortex</title>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-primary: #0a0b0e;
+      --bg-secondary: #121316;
+      --accent-primary: #00ff8c;
+      --accent-secondary: #0066ff;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0a0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      transition: background-color 0.6s ease, color 0.6s ease;
+    }
+
+    body.light-mode {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f5f5f5;
+      --accent-primary: #007bff;
+      --accent-secondary: #00b894;
+      --text-primary: #000000;
+      --text-secondary: #555555;
+    }
+
+    body.light-mode .navbar {
+      background-color: #ffffff;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    body.light-mode .navbar-brand {
+      color: var(--text-primary);
+    }
+
+    #particles-js {
+      position: absolute;
+      z-index: 0;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .fade-transition {
+      transition: all 0.6s ease;
+    }
+
+    .navbar {
+      background-color: rgba(18, 19, 22, 0.95);
+      padding: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 10;
+      position: relative;
+    }
+
+    .navbar-brand {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .nav-link {
+      color: var(--text-secondary) !important;
+    }
+
+    .toggle-btn {
+      background: var(--accent-primary);
+      color: #000;
+      font-size: 0.85rem;
+      padding: 5px 15px;
+      border-radius: 20px;
+      border: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      margin-left: 8px;
+    }
+
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      min-height: 100vh;
+      background: radial-gradient(circle, rgba(0,102,255,0.2), transparent);
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      max-width: 720px;
+      margin: 20px auto;
+    }
+
+    .hero .btn-glow {
+      background: var(--accent-primary);
+      color: #000;
+      font-weight: 600;
+      padding: 0.8rem 1.5rem;
+      border-radius: 30px;
+      border: none;
+      font-size: 1rem;
+      transition: 0.3s ease;
+    }
+
+    .hero .btn-glow:hover {
+      background: var(--accent-secondary);
+      color: #fff;
+      transform: scale(1.05);
+    }
+
+    .glow-circle {
+      position: absolute;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(0,255,140,0.15), transparent);
+      top: -200px;
+      left: -200px;
+      animation: pulse 6s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    .feature-section {
+      position: relative;
+      z-index: 1;
+      padding: 60px 0;
+    }
+
+    .feature-card {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 30px;
+      text-align: center;
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 0 20px rgba(0, 255, 140, 0.2);
+    }
+
+    .feature-card i {
+      font-size: 2.5rem;
+      color: var(--accent-secondary);
+      margin-bottom: 15px;
+    }
+
+    .feature-card h5 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .feature-card p {
+      color: var(--text-secondary);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body class="fade-transition">
+  <nav class="navbar navbar-expand-lg">
+    <div class="container">
+      <a class="navbar-brand" href="/">
+        <i class="fas fa-shield-alt me-2"></i> Vortex
+      </a>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="/dash">Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="/map">Attack Map</a></li>
+          <li class="nav-item"><a class="nav-link" href="/reports">Reports</a></li>
+        </ul>
+        <button id="particles-toggle" class="toggle-btn" onclick="toggleParticles()" title="Toggle Particles">
+          <i class="fas fa-project-diagram"></i>
+        </button>
+        <button class="toggle-btn" onclick="toggleMode()" title="Toggle Theme">
+          <i id="theme-icon" class="material-symbols-outlined">dark_mode</i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="glow-circle"></div>
+    <h1 data-aos="fade-down">Welcome to Vortex</h1>
+    <p data-aos="fade-up">Vortex is your intelligent dynamic honeypot system for detecting, visualizing, and responding to cyber threats in real-time. Monitor attack vectors, gain insights, and stay ahead.</p>
+    <a href="/dash" class="btn-glow" data-aos="zoom-in">Launch Dashboard</a>
+  </section>
+
+  <div id="particles-js"></div>
+
+  <section class="container feature-section">
+    <div class="row g-4">
+      <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+        <div class="feature-card">
+          <i class="fas fa-chart-line"></i>
+          <h5>Live Analytics</h5>
+          <p>Real-time metrics, charts, and alerts to keep you informed and protected.</p>
+          <a href="/dash" class="stretched-link"></a>
+        </div>
+      </div>
+      <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+        <div class="feature-card">
+          <i class="fas fa-globe"></i>
+          <h5>Attack Visualization</h5>
+          <p>Interactive world map showing global cyber threats targeting your system.</p>
+          <a href="/map" class="stretched-link"></a>
+        </div>
+      </div>
+      <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+        <div class="feature-card">
+          <i class="fas fa-file-alt"></i>
+          <h5>Threat Reports</h5>
+          <p>Detailed summaries and daily insights from your honeypot deployments.</p>
+          <a href="/reports" class="stretched-link"></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    &copy; 2025 Vortex Honeypot System. Designed for proactive cyber defense.
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+  <script>
+    AOS.init();
+    let particlesEnabled = true;
+
+    function toggleParticles() {
+      particlesEnabled = !particlesEnabled;
+      const container = document.getElementById('particles-js');
+      const button = document.getElementById('particles-toggle');
+      if (!particlesEnabled) {
+        container.innerHTML = '';
+        button.style.backgroundColor = '#ccc';
+        button.style.color = '#000';
+      } else {
+        loadParticles();
+        button.style.backgroundColor = 'var(--accent-primary)';
+        button.style.color = '#000';
+      }
+    }
+
+    function loadParticles() {
+      tsParticles.load("particles-js", {
+        background: { color: { value: "transparent" } },
+        fpsLimit: 60,
+        interactivity: {
+          events: { onHover: { enable: true, mode: "grab" }, resize: true },
+          modes: { grab: { distance: 150, links: { opacity: 0.5 } } }
+        },
+        particles: {
+          color: { value: "#00ff8c" },
+          links: { color: "#0066ff", distance: 150, enable: true, opacity: 0.4, width: 1 },
+          collisions: { enable: false },
+          move: { direction: "none", enable: true, outModes: "bounce", speed: 1.5 },
+          number: { value: 60, density: { enable: true, area: 800 } },
+          opacity: { value: 0.5 },
+          shape: { type: "circle" },
+          size: { value: { min: 1, max: 3 } }
+        },
+        detectRetina: true
+      });
+    }
+
+    function toggleMode() {
+      const body = document.body;
+      const icon = document.getElementById('theme-icon');
+      const navbar = document.querySelector('.navbar');
+      body.classList.toggle('light-mode');
+      if (body.classList.contains('light-mode')) {
+        icon.innerText = 'light_mode';
+        navbar.style.backgroundColor = '#ffffff';
+        navbar.style.borderBottom = '1px solid #ccc';
+      } else {
+        icon.innerText = 'dark_mode';
+        navbar.style.backgroundColor = 'rgba(18, 19, 22, 0.95)';
+        navbar.style.borderBottom = '1px solid rgba(255, 255, 255, 0.1)';
+      }
+    }
+
+    loadParticles();
+  </script>
+</body>
+</html>

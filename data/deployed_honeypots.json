@@ -1,0 +1,13 @@
+{
+    "timestamp": "2025-04-27 10:27:12",
+    "honeypots": [
+        "conpot_ipmi",
+        "conpot_iec104",
+        "conpot_kamstrup_382",
+        "dionaea",
+        "conpot_guardian_ast",
+        "redishoneypot",
+        "honeytrap",
+        "cowrie"
+    ]
+}

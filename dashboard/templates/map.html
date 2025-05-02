@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vortex Attack Map</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0b0e;
+      --bg-secondary: #121316;
+      --accent-primary: #00ff8c;
+      --accent-secondary: #0066ff;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0a0;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+    }
+
+    .navbar {
+      background: rgba(18, 19, 22, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 1100;
+    }
+
+    .navbar-brand {
+      color: var(--text-primary);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: bold;
+    }
+
+    .nav-link {
+      color: var(--text-secondary) !important;
+    }
+
+    .nav-link.active {
+      color: var(--text-primary) !important;
+    }
+
+    #map {
+      height: 90vh;
+      width: 100%;
+      z-index: 1;
+      background-color: #000;
+    }
+
+    .stat-box {
+      position: absolute;
+      top: 80px;
+      left: 20px;
+      background: rgba(0,0,0,0.8);
+      padding: 12px 20px;
+      border-radius: 12px;
+      z-index: 1000;
+      font-size: 14px;
+      box-shadow: 0 0 20px rgba(0,255,140,0.3);
+      border: 1px solid rgba(0,255,140,0.2);
+    }
+
+    .source-pulse {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      position: absolute;
+      transform: translate(-50%, -50%);
+    }
+
+    .source-pulse::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background: inherit;
+      border-radius: 50%;
+      animation: pulse 2s ease-out infinite;
+    }
+
+    .dest-pulse {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      position: absolute;
+      transform: translate(-50%, -50%);
+    }
+
+    .dest-pulse::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background: inherit;
+      border-radius: 50%;
+      animation: pulse 2s ease-out infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(4); opacity: 0; }
+    }
+
+    .attack-arc {
+      stroke-dasharray: 10;
+      stroke-linecap: round;
+      fill: none;
+      animation: dash 1.5s linear forwards;
+      opacity: 0;
+    }
+
+    @keyframes dash {
+      0% {
+        stroke-dashoffset: 500;
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      100% {
+        stroke-dashoffset: 0;
+        opacity: 0.8;
+      }
+    }
+
+    .leaflet-popup-content-wrapper {
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 13px;
+      border-radius: 10px;
+      border: 1px solid var(--accent-primary);
+    }
+
+    .leaflet-popup-tip {
+      background-color: var(--bg-secondary);
+    }
+
+    .legend {
+      position: absolute;
+      bottom: 30px;
+      right: 20px;
+      background: rgba(0,0,0,0.8);
+      padding: 12px;
+      border-radius: 8px;
+      z-index: 1000;
+      font-size: 12px;
+      box-shadow: 0 0 20px rgba(0,255,140,0.3);
+      border: 1px solid rgba(0,255,140,0.2);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .legend-color {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/"><i class="fas fa-shield-alt"></i> Vortex</a>
+    <div class="collapse navbar-collapse">
+      <ul class="navbar-nav">
+        <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="/dash">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link active" href="/map">Attack Map</a></li>
+        <li class="nav-item"><a class="nav-link" href="/reports">Reports</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Map + Stats -->
+<div id="map"></div>
+<div class="stat-box">
+  <div><strong>Total Attacks:</strong> <span id="total-attacks">0</span></div>
+  <div><strong>Unique IPs:</strong> <span id="unique-ips">0</span></div>
+  <div><strong>Active Connections:</strong> <span id="active-connections">0</span></div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <h6>Attack Types</h6>
+  <div class="legend-item">
+    <div class="legend-color" style="background: #ff4757;"></div>
+    <div>DDoS</div>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background: #ff6b81;"></div>
+    <div>SQL Injection</div>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background: #2ed573;"></div>
+    <div>Brute Force</div>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background: #ff6348;"></div>
+    <div>Malware</div>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background: #00ff8c;"></div>
+    <div>Other</div>
+  </div>
+</div>
+
+<!-- SVG Layer for Animations -->
+<svg id="animation-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:500; pointer-events:none;">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+</svg>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+<script>
+  // Initialize the map with a darker style
+  const map = L.map('map', {
+    worldCopyJump: true,
+    minZoom: 2
+  }).setView([20, 0], 2);
+  
+  // Use a darker map style for better visibility of attacks
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(map);
+  
+  // Add label layer separately for better readability
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
+    subdomains: 'abcd',
+    maxZoom: 19,
+    pane: 'shadowPane'  // Place labels above base map but below markers
+  }).addTo(map);
+
+  // Statistics tracking
+  let totalAttacks = 0;
+  let activeConnections = 0;
+  const uniqueIPs = new Set();
+  const sourceMarkers = new Map();
+  const arcElements = new Map();
+  const attackHistory = [];
+
+  // Function to get attack data
+  async function fetchAttackData() {
+    try {
+      const response = await fetch('/api/map');
+      const data = await response.json();
+      console.log("Fetched attack data:", data.length, "entries");
+      return data;
+    } catch (e) {
+      console.error("Failed to fetch attack data", e);
+      return [];
+    }
+  }
+
+  // Get color based on attack type
+  function getColor(type = '') {
+    if (!type) return "#00ff8c";
+    
+    const t = type.toLowerCase();
+    if (t.includes("ddos")) return "#ff4757";
+    if (t.includes("sql")) return "#ff6b81";
+    if (t.includes("brute")) return "#2ed573";
+    if (t.includes("malware")) return "#ff6348";
+    return "#00ff8c";
+  }
+
+  // Convert lat/lng to SVG coordinates
+  function latLngToSvgPoint(lat, lng) {
+    const point = map.latLngToContainerPoint([lat, lng]);
+    return { x: point.x, y: point.y };
+  }
+
+  // Create bezier curve path between two points
+  function createArcPath(startLat, startLng, endLat, endLng) {
+    const start = latLngToSvgPoint(startLat, startLng);
+    const end = latLngToSvgPoint(endLat, endLng);
+    
+    // Calculate control point (arching up)
+    const midX = (start.x + end.x) / 2;
+    const midY = (start.y + end.y) / 2;
+    const distance = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
+    
+    // Make arc height proportional to distance
+    const controlY = midY - (distance / 3);
+    
+    return `M${start.x},${start.y} Q${midX},${controlY} ${end.x},${end.y}`;
+  }
+
+  // Calculate points for animated dots along the arc
+  function calculateArcPoints(startLat, startLng, endLat, endLng, steps = 50) {
+    const start = latLngToSvgPoint(startLat, startLng);
+    const end = latLngToSvgPoint(endLat, endLng);
+    
+    // Calculate control point
+    const midX = (start.x + end.x) / 2;
+    const midY = (start.y + end.y) / 2;
+    const distance = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
+    const controlY = midY - (distance / 3);
+    
+    let points = [];
+    
+    // Calculate points along the quadratic curve
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const x = Math.pow(1-t, 2) * start.x + 2 * (1-t) * t * midX + Math.pow(t, 2) * end.x;
+      const y = Math.pow(1-t, 2) * start.y + 2 * (1-t) * t * controlY + Math.pow(t, 2) * end.y;
+      points.push({ x, y });
+    }
+    
+    return points;
+  }
+
+  // Create animation for an attack
+  function animateAttack(attack) {
+    // Skip if missing coordinates
+    if (!attack.srcLat || !attack.srcLon || !attack.destLat || !attack.destLon) {
+      console.warn("Attack missing coordinates:", attack);
+      return;
+    }
+
+    const srcLatLng = [attack.srcLat, attack.srcLon];
+    const destLatLng = [attack.destLat, attack.destLon];
+    const attackType = attack.type || 'unknown';
+    const color = getColor(attackType);
+    
+    // Update statistics
+    totalAttacks++;
+    uniqueIPs.add(attack.ip || 'unknown');
+    activeConnections++;
+    
+    document.getElementById('total-attacks').textContent = totalAttacks;
+    document.getElementById('unique-ips').textContent = uniqueIPs.size;
+    document.getElementById('active-connections').textContent = activeConnections;
+    
+    console.log("Animating attack:", {
+      from: `${attack.srcCity || 'Unknown'}, ${attack.srcCountry || 'Unknown'}`,
+      to: `${attack.destCity || 'Unknown'}, ${attack.destCountry || 'Unknown'}`,
+      type: attackType
+    });
+
+    // Add attack to history for persistence
+    attackHistory.push({
+      srcLatLng,
+      destLatLng,
+      color,
+      timestamp: Date.now(),
+      severity: attack.severity || 1
+    });
+    
+    // Create or update persistent source marker
+    const srcKey = `${srcLatLng[0]},${srcLatLng[1]}`;
+    let srcMarker = sourceMarkers.get(srcKey);
+    
+    if (!srcMarker) {
+      srcMarker = L.circleMarker(srcLatLng, {
+        radius: 4,
+        color,
+        fillColor: color,
+        fillOpacity: 0.7,
+        weight: 1
+      }).addTo(map);
+      
+      srcMarker.bindPopup(`
+        <strong>Source IP:</strong> ${attack.ip || 'Unknown'}<br/>
+        <strong>Attack Type:</strong> ${attackType}<br/>
+        <strong>Location:</strong> ${attack.srcCountry ? attack.srcCity + ', ' + attack.srcCountry : attack.srcLat.toFixed(2) + ', ' + attack.srcLon.toFixed(2)}<br/>
+        <strong>Hits:</strong> ${attack.hits || 1}<br/>
+        <strong>Last Seen:</strong> ${attack.last_seen || 'Unknown'}
+      `);
+      
+      sourceMarkers.set(srcKey, {
+        marker: srcMarker,
+        count: 1,
+        ip: attack.ip || 'Unknown',
+        type: attackType
+      });
+    } else {
+      // Update existing marker with new count
+      srcMarker.count++;
+      srcMarker.marker.setStyle({ radius: Math.min(4 + Math.log(srcMarker.count), 10) });
+      srcMarker.marker.setPopupContent(`
+        <strong>Source IP:</strong> ${attack.ip || 'Unknown'}<br/>
+        <strong>Attack Type:</strong> ${attackType}<br/>
+        <strong>Location:</strong> ${attack.srcCountry ? attack.srcCity + ', ' + attack.srcCountry : attack.srcLat.toFixed(2) + ', ' + attack.srcLon.toFixed(2)}<br/>
+        <strong>Attacks:</strong> ${srcMarker.count}<br/>
+        <strong>Last Seen:</strong> ${attack.last_seen || 'Unknown'}
+      `);
+    }
+    
+    // Create destination marker (smaller than source)
+    const destMarker = L.circleMarker(destLatLng, {
+      radius: 3,
+      color: '#ffffff',
+      fillColor: '#ffffff',
+      fillOpacity: 0.5,
+      weight: 1
+    }).addTo(map);
+    
+    destMarker.bindPopup(`
+      <strong>Target IP:</strong> ${attack.dest_ip || 'Unknown'}<br/>
+      <strong>Location:</strong> ${attack.destCountry ? attack.destCity + ', ' + attack.destCountry : attack.destLat.toFixed(2) + ', ' + attack.destLon.toFixed(2)}
+    `);
+    
+    // Create pulsating effects
+    const sourcePulse = L.divIcon({
+      className: 'source-pulse',
+      html: `<div class="source-pulse" style="background:${color}"></div>`,
+      iconSize: [15, 15]
+    });
+    
+    const destPulse = L.divIcon({
+      className: 'dest-pulse',
+      html: `<div class="dest-pulse" style="background:#ffffff"></div>`,
+      iconSize: [10, 10]
+    });
+    
+    const sourcePulseMarker = L.marker(srcLatLng, { icon: sourcePulse }).addTo(map);
+    const destPulseMarker = L.marker(destLatLng, { icon: destPulse }).addTo(map);
+    
+    // Create the SVG arc animation
+    const svg = document.getElementById('animation-layer');
+    const arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const arcKey = `${srcLatLng[0]},${srcLatLng[1]}-${destLatLng[0]},${destLatLng[1]}`;
+    
+    // Function to update arc path on map move/zoom
+    function updateArcPath() {
+      arcPath.setAttribute('d', createArcPath(srcLatLng[0], srcLatLng[1], destLatLng[0], destLatLng[1]));
+    }
+    
+    arcPath.setAttribute('class', 'attack-arc');
+    arcPath.setAttribute('stroke', color);
+    arcPath.setAttribute('stroke-width', '2');
+    updateArcPath();
+    
+    svg.appendChild(arcPath);
+    
+    // Create moving particle along the arc
+    const particleGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const trailPath = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    trailPath.setAttribute('stroke', color);
+    trailPath.setAttribute('stroke-width', '1.5');
+    trailPath.setAttribute('fill', 'none');
+    trailPath.setAttribute('opacity', '0.7');
+    trailPath.setAttribute('stroke-linecap', 'round');
+    trailPath.setAttribute('stroke-linejoin', 'round');
+    trailPath.setAttribute('filter', 'url(#glow)');
+    svg.appendChild(trailPath);
+
+    const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    particle.setAttribute('r', '3');
+    particle.setAttribute('fill', color);
+    particleGroup.appendChild(particle);
+    svg.appendChild(particleGroup);
+    
+    // Store references for map move updates
+    arcElements.set(arcKey, {
+      arcPath,
+      srcLatLng,
+      destLatLng,
+      particleGroup,
+      particle,
+      updateFn: updateArcPath
+    });
+    
+    // Add event to update arc on map move
+    map.on('move', updateArcPath);
+    animateGlowingTrail(srcLatLng, destLatLng, color);
+    // Animate particle along the path
+    const arcPoints = calculateArcPoints(srcLatLng[0], srcLatLng[1], destLatLng[0], destLatLng[1]);
+    let pointIndex = 0;
+    
+    const particleAnimation = setInterval(() => {
+      if (pointIndex >= arcPoints.length) {
+        clearInterval(particleAnimation);
+        return;
+      }
+      
+      const point = arcPoints[pointIndex];
+      particle.setAttribute('cx', point.x);
+      particle.setAttribute('cy', point.y);
+      // Add trail point to history
+      if (!particle.trailPoints) particle.trailPoints = [];
+      particle.trailPoints.push([point.x, point.y]);
+
+      // Keep last N trail points for sparkle
+      const MAX_TRAIL = 20;
+      if (particle.trailPoints.length > MAX_TRAIL) {
+        particle.trailPoints.shift();
+      }
+
+      // Update trail path
+      const trailString = particle.trailPoints.map(p => p.join(",")).join(" ");
+      trailPath.setAttribute('points', trailString);
+
+      pointIndex++;
+      
+      // Create spark effect
+      if (pointIndex % 5 === 0) {
+        const spark = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        spark.setAttribute('cx', point.x);
+        spark.setAttribute('cy', point.y);
+        spark.setAttribute('r', '2');
+        spark.setAttribute('fill', color);
+        spark.style.opacity = '1';
+        
+        svg.appendChild(spark);
+        
+        // Animate and remove spark
+        setTimeout(() => {
+          spark.style.transition = 'all 0.5s';
+          spark.style.opacity = '0';
+          spark.style.r = '0';
+          svg.removeChild(trailPath);
+          
+          setTimeout(() => {
+            svg.removeChild(spark);
+          }, 500);
+        }, 10);
+      }
+    }, 30);
+    
+    // Remove elements after animation completes
+    setTimeout(() => {
+      map.removeLayer(destMarker);
+      map.removeLayer(destPulseMarker);
+      map.removeLayer(sourcePulseMarker);
+      
+      // Remove arc and event listener
+      svg.removeChild(arcPath);
+      svg.removeChild(particleGroup);
+      map.off('move', updateArcPath);
+      arcElements.delete(arcKey);
+      
+      activeConnections--;
+      document.getElementById('active-connections').textContent = activeConnections;
+    }, 6000);
+  }
+  // Update all arcs when map moves
+  map.on('move', () => {
+    arcElements.forEach(element => {
+      element.updateFn();
+    });
+  });
+
+  // Function to handle window resize
+  function handleResize() {
+    const svg = document.getElementById('animation-layer');
+    svg.setAttribute('width', window.innerWidth);
+    svg.setAttribute('height', window.innerHeight);
+    
+    // Update all arcs
+    arcElements.forEach(element => {
+      element.updateFn();
+    });
+  }
+
+  // Set initial SVG size
+  window.addEventListener('resize', handleResize);
+  handleResize();
+
+  // Track already processed attacks to avoid duplicates
+  const processedAttacks = new Set();
+  
+  function animateGlowingTrail(startLatLng, endLatLng, color) {
+    const svg = document.getElementById('animation-layer');
+    const start = map.latLngToContainerPoint(startLatLng);
+    const end = map.latLngToContainerPoint(endLatLng);
+
+    // Create the glowing trail path
+    const trail = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const pathData = `M${start.x},${start.y} L${end.x},${end.y}`;
+    trail.setAttribute('d', pathData);
+    trail.setAttribute('stroke', color);
+    trail.setAttribute('stroke-width', '2.5');
+    trail.setAttribute('fill', 'none');
+    trail.setAttribute('filter', 'url(#glow)');
+    trail.setAttribute('stroke-linecap', 'round');
+    trail.setAttribute('opacity', '1');
+    svg.appendChild(trail);
+
+    // Animate opacity and dash offset
+    trail.style.strokeDasharray = '5,10';
+    trail.style.strokeDashoffset = '100';
+    trail.style.animation = 'dashTrail 2s linear forwards';
+
+    setTimeout(() => {
+      trail.style.transition = 'opacity 1s ease-out';
+      trail.style.opacity = '0';
+      setTimeout(() => {
+        svg.removeChild(trail);
+      }, 1000);
+    }, 1800);
+  }
+
+  // Add keyframe animation globally
+  const style = document.createElement('style');
+  style.innerHTML = `
+  @keyframes dashTrail {
+    0% { stroke-dashoffset: 100; }
+    100% { stroke-dashoffset: 0; }
+  }`;
+  document.head.appendChild(style);
+
+  // Function to process real attack data from attack_log.json
+  async function processNewAttacks() {
+    const attacks = await fetchAttackData();
+    
+    if (attacks && attacks.length > 0) {
+      console.log(`Found ${attacks.length} attacks, processing new ones`);
+      
+      // Process only new attacks with a delay between each
+      let newCount = 0;
+      const toProcess = [];
+      
+      for (const attack of attacks) {
+        // Create a unique ID for this attack based on IP, time and type
+        const attackId = `${attack.ip}-${attack.dest_ip}-${attack.last_seen || attack.first_seen || ''}-${attack.type || ''}`;
+        
+        // Only process attacks we haven't seen before
+        if (!processedAttacks.has(attackId)) {
+          processedAttacks.add(attackId);
+          toProcess.push(attack);
+          newCount++;
+          
+          // Cap at 20 new animations at once to avoid overloading the browser
+          if (newCount >= 20) break;
+        }
+      }
+      
+      // Process the new attacks with a delay between each
+      for (let i = 0; i < toProcess.length; i++) {
+        setTimeout(() => {
+          animateAttack(toProcess[i]);
+        }, i * 800); // Stagger animations by 800ms
+      }
+      
+      console.log(`Processed ${newCount} new attacks`);
+    }
+    
+    // Poll for new attacks every 10 seconds
+    setTimeout(processNewAttacks, 10000);
+  }
+
+  // Start attack processing
+  processNewAttacks();
+</script>
+
+</body>
+</html>
